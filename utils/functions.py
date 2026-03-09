@@ -49,25 +49,37 @@ def legalization_of_file_path(filepath:str):
     suffix = temp[-1]
     filep = temp[0]
 
-    names = filep.split("/")
-    re = []
+    if len(filep) >= 2 and filep[1] == ":" and filep[0].isalpha():
+        drive, tail = filep[:2], filep[2:]
+    else:
+        drive, tail = os.path.splitdrive(filep)
+    normalized_tail = tail.replace('\\', '/')
+    is_abs = normalized_tail.startswith('/')
+
+    names = [name for name in normalized_tail.split('/') if name not in ('', '.')]
+    path_parts = []
     for index, name in enumerate(names):
         name = special_characters_replacement(name)
-        max = 255-3
-        if index == len(names)-1:
-            max = max - len(suffix)
-            
-        len_name = 0
-        for _index, every_char in enumerate(name):
-            len_name += len(every_char.encode())
-            if max < len_name:
-                name = name[:_index] + '…'
-                break
-        if index == len(names)-1:
-            name = name + suffix
-        re.append(name)
+        max_len = 255 - 3
+        if index == len(names) - 1:
+            max_len = max_len - len(suffix)
 
-    return '/'.join(re)
+        current_len = 0
+        for char_index, every_char in enumerate(name):
+            current_len += len(every_char.encode())
+            if max_len < current_len:
+                name = name[:char_index] + '…'
+                break
+
+        if index == len(names) - 1:
+            name = name + suffix
+        path_parts.append(name)
+
+    sanitized_tail = '/'.join(path_parts)
+    if is_abs:
+        sanitized_tail = '/' + sanitized_tail
+
+    return f"{drive}{sanitized_tail}" if drive else sanitized_tail
 
 
 def special_characters_replacement(text) -> str:

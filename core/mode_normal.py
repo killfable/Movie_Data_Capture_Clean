@@ -139,6 +139,7 @@ def main_mode_1(movie_path, movie_info):
     movie_file_name_template = config.getStrValue("template.movie_file_name_template")
     logger.debug(f"movie_file_name_template: [{movie_file_name_template}]")
     target_file_name = movie_file_name_template.format(**movie_info)
+    target_file_name = re.sub(r"\s+", " ", target_file_name).strip()
 
     # 生成nfo文件
     if config.getBoolValue("capture.write_nfo_switch"):

@@ -1,8 +1,10 @@
 import configparser
+import os
 import signal
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -26,6 +28,12 @@ class App:
         self.specify_var = tk.StringVar()
         self.url_var = tk.StringVar()
         self.xlsx_var = tk.StringVar(value="output.xlsx")
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
         self.proxy_enabled_var = tk.BooleanVar(value=False)
         self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
 
@@ -202,14 +210,19 @@ class App:
             return
 
         self.log(f"\n$ {' '.join(cmd)}\n")
-        self.process = subprocess.Popen(
-            cmd,
-            cwd=str(REPO_ROOT),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
+        popen_kwargs = {
+            'cwd': str(REPO_ROOT),
+            'stdout': subprocess.PIPE,
+            'stderr': subprocess.STDOUT,
+            'text': True,
+            'bufsize': 1,
+        }
+        if os.name == 'nt':
+            popen_kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
+        elif hasattr(os, 'setsid'):
+            popen_kwargs['preexec_fn'] = os.setsid
+
+        self.process = subprocess.Popen(cmd, **popen_kwargs)
         threading.Thread(target=self._drain_output, daemon=True).start()
 
     def _drain_output(self) -> None:
@@ -243,9 +256,31 @@ class App:
         threading.Thread(target=self._test_network_worker, args=(url,), daemon=True).start()
 
     def stop_task(self) -> None:
-        if self.process and self.process.poll() is None:
+        if not self.process or self.process.poll() is not None:
+            self.log("\n[no running task]\n")
+            return
+
+        try:
             self.process.send_signal(signal.SIGINT)
             self.log("\n[sent SIGINT]\n")
+        except Exception as exc:
+            self.log(f"\n[send SIGINT failed: {exc}]\n")
+
+        for _ in range(10):
+            if self.process.poll() is not None:
+                self.log("[task stopped]\n")
+                return
+            time.sleep(0.2)
+
+        self.log("[SIGINT timeout, terminating process]\n")
+        self.process.terminate()
+        for _ in range(5):
+            if self.process.poll() is not None:
+                self.log("[task terminated]\n")
+                return
+            time.sleep(0.2)
+        self.process.kill()
+        self.log("[task killed]\n")
 
     def run_search(self) -> None:
         number = self.search_var.get().strip()
