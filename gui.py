@@ -28,6 +28,38 @@ class App:
         self.specify_var = tk.StringVar()
         self.url_var = tk.StringVar()
         self.xlsx_var = tk.StringVar(value="output.xlsx")
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
 
         self.scrape_path_var = tk.StringVar()
         self.output_path_var = tk.StringVar()
