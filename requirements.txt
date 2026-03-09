@@ -5,3 +5,4 @@ MechanicalSoup
 cloudscraper
 translators
 openpyxl
+pyinstaller>=6.0.0
