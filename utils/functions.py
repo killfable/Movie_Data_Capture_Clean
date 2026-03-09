@@ -1,4 +1,5 @@
 import time,os
+import re
 from unicodedata import category
 from pathlib import Path
 
@@ -53,7 +54,7 @@ def legalization_of_file_path(filepath:str):
         drive, tail = filep[:2], filep[2:]
     else:
         drive, tail = os.path.splitdrive(filep)
-    normalized_tail = tail.replace('\\', '/')
+    normalized_tail = re.sub(r'[\\/]+', '/', tail)
     is_abs = normalized_tail.startswith('/')
 
     names = [name for name in normalized_tail.split('/') if name not in ('', '.')]
@@ -85,21 +86,20 @@ def legalization_of_file_path(filepath:str):
 def special_characters_replacement(text) -> str:
     if not isinstance(text, str):
         return text
-    return (text.replace('\\', '∖').  # U+2216 SET MINUS @ Basic Multilingual Plane
-            replace('/', '∕').  # U+2215 DIVISION SLASH @ Basic Multilingual Plane
-            replace(':', '꞉').  # U+A789 MODIFIER LETTER COLON @ Latin Extended-D
-            replace('*', '∗').  # U+2217 ASTERISK OPERATOR @ Basic Multilingual Plane
-            replace('?', '？').  # U+FF1F FULLWIDTH QUESTION MARK @ Basic Multilingual Plane
-            replace('"', '＂').  # U+FF02 FULLWIDTH QUOTATION MARK @ Basic Multilingual Plane
-            replace('\'', '＇'). # U+FF07 FULLWIDTH QUOTATION MARK @ Basic Multilingual Plane
-            replace('<', 'ᐸ').  # U+1438 CANADIAN SYLLABICS PA @ Basic Multilingual Plane
-            replace('>', 'ᐳ').  # U+1433 CANADIAN SYLLABICS PO @ Basic Multilingual Plane
-            replace('|', 'ǀ').  # U+01C0 LATIN LETTER DENTAL CLICK @ Basic Multilingual Plane
-            replace('&lsquo;', '‘').  # U+02018 LEFT SINGLE QUOTATION MARK
-            replace('&rsquo;', '’').  # U+02019 RIGHT SINGLE QUOTATION MARK
-            replace('&hellip;', '…').
-            replace('&amp;', '＆').
-            replace("&", '＆')
+    # 使用 GBK 兼容字符，避免 Windows 控制台日志输出编码异常。
+    return (text.replace('\\', '-').
+            replace('/', '-').
+            replace(':', '-').
+            replace('*', '').
+            replace('?', '').
+            replace('"', "'").
+            replace('<', '(').
+            replace('>', ')').
+            replace('|', '-').
+            replace('&lsquo;', "'").
+            replace('&rsquo;', "'").
+            replace('&hellip;', '...').
+            replace('&amp;', '&')
             )
 
 def read_txt_file(file_path, encoding='utf-8'):

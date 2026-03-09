@@ -230,8 +230,11 @@ def moveFailedFolder(movie_path):
 def create_movie_folder_by_rule(movie_info):
     success_folder = config.getStrValue("common.success_output_folder")
     location_template = config.getStrValue("template.location_template")
-    relative_path = location_template.format(**movie_info)
-    path = os.path.join(success_folder, f'./{relative_path.strip()}')
+    relative_path = location_template.format(**movie_info).strip()
+    if relative_path in ('', '.', './'):
+        path = success_folder
+    else:
+        path = os.path.join(success_folder, relative_path)
     path = legalization_of_file_path(path)
     
     try:

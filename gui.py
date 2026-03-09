@@ -43,6 +43,12 @@ class App:
         self.proxy_enabled_var = tk.BooleanVar(value=False)
         self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
 
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
         self._build_ui()
         self._load_conf_values_into_ui()
 
