@@ -27,29 +27,33 @@
 * 加了个在shell窗口输出指定xlsx文件指定字段内容的小工具，自适应字段宽度。
   * 使用：`python print_xlsx.py 一些参数` 参数结构自行参见文件内部
 
-## Web控制台（实验性）
+## GUI可执行程序
 
-新增了一个基于 FastAPI 的 Web 控制台，可通过页面发起常用任务并查看日志，支持：
+新增了一个本地桌面 GUI 入口 `gui.py`，无需 Web 控制台。
+
+支持功能：
 
 * 番号搜索（`--search`）
 * 列出待处理影片（`--list-movie`）
 * 单文件刮削（`--specify-file`）
 * URL 抓取到 Excel（`--scraping-url`）
 * 自动评分（`--rate`）
+* 全局参数（`--conf` 与多条 `--over-config`）
 
-启动方式：
+直接运行 GUI：
+
+```bash
+python gui.py
+```
+
+打包为可执行文件（Windows/Linux）：
 
 ```bash
 pip install -r requirements.txt
-uvicorn web.app:app --host 0.0.0.0 --port 8000
+pyinstaller --noconfirm --onefile --windowed --name MovieDataCaptureGUI gui.py
 ```
 
-浏览器访问：`http://127.0.0.1:8000`
-
-说明：Web页面支持为任务附加全局参数：
-* 配置文件路径（映射 `--conf`）
-* 多条配置覆盖（每行一条，映射 `--over-config`）
-
+打包输出位于 `dist/MovieDataCaptureGUI`（Windows 下为 `.exe`）。
 
 一些事项：
 * 目前虽然移植了avsox, javbus, javdb, msin这四个数据源，但实际上只有javdb进行了实际使用。如果要使用其他数据源，可能导致某些模式下存在问题。比如`mode_url_scraper`模块只实现了javdb
