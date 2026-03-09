@@ -139,10 +139,14 @@ def main_mode_1(movie_path, movie_info):
     movie_file_name_template = config.getStrValue("template.movie_file_name_template")
     logger.debug(f"movie_file_name_template: [{movie_file_name_template}]")
     target_file_name = movie_file_name_template.format(**movie_info)
+    target_file_name = re.sub(r"\s+", " ", target_file_name).strip()
+
+    safe_movie_file_name = legalization_of_file_path(target_file_name + movie_suffix)
+    safe_base_name = os.path.splitext(safe_movie_file_name)[0]
 
     # 生成nfo文件
     if config.getBoolValue("capture.write_nfo_switch"):
-        nfo_path = legalization_of_file_path(os.path.join(movie_target_dir, f"{target_file_name}.nfo"))
+        nfo_path = os.path.join(movie_target_dir, f"{safe_base_name}.nfo")
         try:
             print_nfo_file(nfo_path,fanart_path,poster_path,thumb_path,movie_info)
             logger.info("write nfo OK")
@@ -152,7 +156,7 @@ def main_mode_1(movie_path, movie_info):
             return
     
     # 生成影片最终全路径，进行长度控制
-    new_movie_path = legalization_of_file_path(os.path.join(movie_target_dir, target_file_name + movie_suffix))
+    new_movie_path = os.path.join(movie_target_dir, safe_movie_file_name)
     logger.info(f"move to [{new_movie_path[0:cn_space(new_movie_path, 150)]}]")
     # 移动影片
     shutil.move(movie_path, new_movie_path)
@@ -163,7 +167,7 @@ def main_mode_1(movie_path, movie_info):
         l = len(movie_path)-len(movie_suffix)
         sub_path = movie_path[:l]+sub_suffix
         if os.path.isfile(sub_path):
-            target_sub_path = os.path.join(movie_target_dir, target_file_name + sub_suffix)
+            target_sub_path = os.path.join(movie_target_dir, safe_base_name + sub_suffix)
             logger.info(f"find sub file at [{sub_path}], move to [{target_sub_path}]")
             shutil.move(sub_path, target_sub_path)
 
@@ -227,11 +231,16 @@ def moveFailedFolder(movie_path):
 根据配置的location_template模板生成影片的目标路径并创建文件夹。
 '''
 def create_movie_folder_by_rule(movie_info):
-    success_folder = config.getStrValue("common.success_output_folder")
+    success_folder = config.getStrValue("common.success_output_folder").strip()
+    # 兼容旧版本生成的全角分隔符路径，避免被当作相对路径创建在项目目录。
+    success_folder = success_folder.replace('꞉', ':').replace('∖', '\\').replace('∕', '/')
     location_template = config.getStrValue("template.location_template")
-    relative_path = location_template.format(**movie_info)
-    path = os.path.join(success_folder, f'./{relative_path.strip()}')
-    path = legalization_of_file_path(path)
+    relative_path = location_template.format(**movie_info).strip()
+    if relative_path in ('', '.', './'):
+        path = success_folder
+    else:
+        path = os.path.join(success_folder, relative_path)
+    path = os.path.normpath(path)
     
     try:
         create_folder(path)

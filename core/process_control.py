@@ -62,6 +62,13 @@ def start():
         from . import mode_list_movie
         mode_list_movie.run()
         return
+
+    # 显式批量整理模式 ---------------------------------
+    if config.getBoolValAtArgs("normal_mode"):
+        logger.info(f"Find --normal in the parameter list. run in normal mode!")
+        from . import mode_normal
+        mode_normal.run()
+        return
     
     # 默认模式  -----------------------------------------
     logger.info(f"run in default mode. ")

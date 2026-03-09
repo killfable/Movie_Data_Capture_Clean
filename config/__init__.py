@@ -24,11 +24,18 @@ def getBoolValAtArgs(key:str = "", default:bool=False) -> bool:
     if isinstance(value, bool):
         return value
     
-    try:
+    if isinstance(value, (int, float)):
         return bool(value)
-    except Exception as e:
-        logger.error(f"config.getBoolValAtArgs error! cannot parse to bool. key: [{key}] value: {value} ")
-        return default
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ("1", "true", "yes", "on"):
+            return True
+        if normalized in ("0", "false", "no", "off", ""):
+            return False
+
+    logger.error(f"config.getBoolValAtArgs error! cannot parse to bool. key: [{key}] value: {value} ")
+    return default
 
 
 def getStrValue(key:str = "") -> str:
