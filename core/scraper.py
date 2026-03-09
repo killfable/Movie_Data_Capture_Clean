@@ -1,10 +1,27 @@
 import os
 import re
+from urllib.parse import urlparse
 from .scrapinglib.base import Scraper
 import logger
 import config
 from utils.functions import special_characters_replacement
 from utils import translate
+
+
+def _extract_website_id(website: str) -> str:
+    website_id = website.split("/")[-1]
+    try:
+        parsed = urlparse(website)
+        parts = [p for p in parsed.path.split('/') if p]
+        # javdb 详情页通常为 /v/<id>，该 id 为站内短 hash，不适合作为输出文件名前缀。
+        if len(parts) >= 2 and parts[-2].lower() == 'v':
+            return ''
+        # 兜底：过滤短 hash 风格的末尾片段，避免把无意义随机串带入命名。
+        if re.fullmatch(r'[A-Za-z0-9]{5,10}', website_id):
+            return ''
+    except Exception:
+        pass
+    return website_id
 
 '''
 刮削器转接层。将外围业务逻辑与核心刮削器scrapinglib解耦
@@ -110,11 +127,10 @@ def cover_json_data(movie_info):
     # movie_info['extrafanart'] = special_characters_replacement(movie_info["extrafanart"]) if 'extrafanart' in movie_info else ''
 
     if 'website' in movie_info:
-        movie_info["website_id"] = movie_info["website"].split("/")[-1]
+        movie_info["website_id"] = _extract_website_id(str(movie_info["website"]))
     
 
     return movie_info
-
 
 
 
