@@ -11,6 +11,9 @@ G_SPAT = re.compile(
     "(-|_)(fhd|hd|sd|1080p|720p|4K|x264|x265|uncensored|hack|leak)",
     re.IGNORECASE)
 
+_DEFAULT_NUMBER_PATTERN_STRICT = re.compile(r'([a-zA-Z]{2,6})(-|_{1,})(\d{2,5})')
+_DEFAULT_NUMBER_PATTERN_LOOSE = re.compile(r'([a-zA-Z]{2,6})(-|_{0,1})(\d{2,5})')
+
 # 按javdb数据源的命名规范提取number
 G_TAKE_NUM_RULES = {
     'tokyo.*hot': lambda x: str(re.search(r'(cz|gedo|k|n|red-|se)\d{2,4}', x, re.I).group()),
@@ -25,25 +28,28 @@ G_TAKE_NUM_RULES = {
     'fc2': lambda x: "FC2-" + str(re.search(r'(fc2)(-|_){0,1}(ppv){0,1}(-|_){0,1}(\d{7})(?=\D)', x, re.I).group(5)),
 }
 
+_COMPILED_TAKE_NUM_RULES = [
+    (re.compile(pattern, re.I), extractor)
+    for pattern, extractor in G_TAKE_NUM_RULES.items()
+]
+
 def get_number(file_path: str) -> str:
     """
     从文件路径中提取番号
     """
-    filename = os.path.basename(file_path)
-    filename = G_SPAT.sub("", filename)
+    filename = G_SPAT.sub("", os.path.basename(file_path))
     try:
-        for k, v in G_TAKE_NUM_RULES.items():
+        for pattern, extractor in _COMPILED_TAKE_NUM_RULES:
             try:
-                if re.search(k, filename, re.I):
-                    return v(filename)
+                if pattern.search(filename):
+                    return extractor(filename)
             except Exception as e:
-                logger.error(f"get_number with G_TAKE_NUM_RULES[{k}] from [{filename}] error. [{e}]")
+                logger.error(f"get_number with G_TAKE_NUM_RULES[{pattern.pattern}] from [{filename}] error. [{e}]")
                 # print(f"get_number with G_TAKE_NUM_RULES[{k}] from [{filename}] error. [{e}]")
         
-
-        result = re.search(r'([a-zA-Z]{2,6})(-|_{1,})(\d{2,5})',filename)
+        result = _DEFAULT_NUMBER_PATTERN_STRICT.search(filename)
         if result is None:
-            result = re.search(r'([a-zA-Z]{2,6})(-|_{0,1})(\d{2,5})',filename)
+            result = _DEFAULT_NUMBER_PATTERN_LOOSE.search(filename)
         if result is None:
             return None
 
@@ -141,5 +147,4 @@ def test():
 
     for t in test_use_cases:
         print(t, get_number(t))
-
 
