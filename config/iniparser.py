@@ -26,7 +26,7 @@ def parse() -> bool:
             logger.error("config.ini not found!")
             return False
     
-    variables.conf["conf_file_path"] = os.path.abspath(p)
+    variables.conf["conf_file_path"] = os.path.abspath(ini_path)
     logger.debug(f"find config.ini at {variables.conf['conf_file_path']}")
     try:
         parser = configparser.ConfigParser()
