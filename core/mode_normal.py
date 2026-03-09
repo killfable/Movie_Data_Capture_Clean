@@ -139,6 +139,7 @@ def main_mode_1(movie_path, movie_info):
     movie_file_name_template = config.getStrValue("template.movie_file_name_template")
     logger.debug(f"movie_file_name_template: [{movie_file_name_template}]")
     target_file_name = movie_file_name_template.format(**movie_info)
+    target_file_name = re.sub(r"\s+", " ", target_file_name).strip()
 
     # 生成nfo文件
     if config.getBoolValue("capture.write_nfo_switch"):
@@ -229,8 +230,11 @@ def moveFailedFolder(movie_path):
 def create_movie_folder_by_rule(movie_info):
     success_folder = config.getStrValue("common.success_output_folder")
     location_template = config.getStrValue("template.location_template")
-    relative_path = location_template.format(**movie_info)
-    path = os.path.join(success_folder, f'./{relative_path.strip()}')
+    relative_path = location_template.format(**movie_info).strip()
+    if relative_path in ('', '.', './'):
+        path = success_folder
+    else:
+        path = os.path.join(success_folder, relative_path)
     path = legalization_of_file_path(path)
     
     try:
