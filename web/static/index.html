@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movie Data Capture Web</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 12px; }
+    input, button, textarea { margin: 4px 0; padding: 6px 8px; }
+    textarea { width: 100%; min-height: 54px; }
+    pre { background: #111; color: #0f0; padding: 12px; height: 320px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 6px; font-size: 13px; }
+    .hint { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Movie Data Capture Web 控制台</h1>
+  <div class="grid">
+    <div class="card">
+      <h3>全局运行参数</h3>
+      <input id="confPath" placeholder="可选：配置文件路径，例如 /path/config.ini" style="width:100%" />
+      <textarea id="overConfig" placeholder="可选：每行一个 over-config，例如&#10;common.enable_debug=1&#10;common.interval=10"></textarea>
+      <div class="hint">以上参数会附加到所有任务。</div>
+
+      <h3>番号搜索</h3>
+      <input id="searchNumber" placeholder="例如 ABP-123" />
+      <button onclick="runSearch()">运行</button>
+
+      <h3>列出待处理影片</h3>
+      <button onclick="runListMovie()">运行 --list-movie</button>
+
+      <h3>单文件刮削</h3>
+      <input id="specifyPath" placeholder="/path/to/movie.mp4" style="width:100%"/>
+      <button onclick="runSpecifyFile()">运行</button>
+
+      <h3>URL 抓取到 Excel</h3>
+      <input id="scrapeUrl" placeholder="https://javdb.com/.." style="width:100%"/>
+      <input id="xlsxFile" placeholder="output.xlsx" style="width:100%"/>
+      <button onclick="runScrapingUrl()">运行</button>
+
+      <h3>自动评分</h3>
+      <button onclick="runRate()">运行 --rate</button>
+    </div>
+
+    <div class="card">
+      <h3>任务列表</h3>
+      <button onclick="refreshTasks()">刷新</button>
+      <table>
+        <thead><tr><th>ID</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="taskTable"></tbody>
+      </table>
+      <h3>日志</h3>
+      <pre id="log"></pre>
+    </div>
+  </div>
+
+<script>
+let currentTask = null;
+
+async function api(path, options={}) {
+  const res = await fetch(path, {headers: {'Content-Type': 'application/json'}, ...options});
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || '请求失败');
+  }
+  return res.json();
+}
+
+function globalOptions() {
+  const conf_file_path = document.getElementById('confPath').value.trim();
+  const over_config = document.getElementById('overConfig').value
+    .split('\n')
+    .map(v => v.trim())
+    .filter(Boolean);
+  return { conf_file_path, over_config };
+}
+
+async function start(path, payload={}) {
+  const body = JSON.stringify({...globalOptions(), ...payload});
+  const task = await api(path, {method: 'POST', body});
+  currentTask = task.task_id;
+  await refreshTasks();
+  await loadLog(task.task_id);
+}
+
+function runSearch() {
+  const number = document.getElementById('searchNumber').value.trim();
+  if (!number) return alert('请输入番号');
+  start('/api/tasks/search', {number}).catch(e => alert(e.message));
+}
+function runListMovie() { start('/api/tasks/list-movie').catch(e => alert(e.message)); }
+function runSpecifyFile() {
+  const file_path = document.getElementById('specifyPath').value.trim();
+  if (!file_path) return alert('请输入文件路径');
+  start('/api/tasks/specify-file', {file_path}).catch(e => alert(e.message));
+}
+function runScrapingUrl() {
+  const url = document.getElementById('scrapeUrl').value.trim();
+  const xlsx_file = document.getElementById('xlsxFile').value.trim();
+  if (!url || !xlsx_file) return alert('请输入URL与xlsx文件名');
+  start('/api/tasks/scraping-url', {url, xlsx_file}).catch(e => alert(e.message));
+}
+function runRate() { start('/api/tasks/rate').catch(e => alert(e.message)); }
+
+async function stopTask(id) {
+  await api(`/api/tasks/${id}/stop`, {method: 'POST'});
+  await refreshTasks();
+}
+
+async function loadLog(id) {
+  const data = await api(`/api/tasks/${id}/log`);
+  document.getElementById('log').textContent = data.log;
+}
+
+async function refreshTasks() {
+  const tasks = await api('/api/tasks');
+  const tbody = document.getElementById('taskTable');
+  tbody.innerHTML = '';
+  for (const t of tasks) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><a href="#" onclick="currentTask='${t.task_id}';loadLog('${t.task_id}');return false;">${t.task_id}</a></td>
+                    <td>${t.status}</td>
+                    <td><button onclick="stopTask('${t.task_id}')">停止</button></td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+setInterval(async () => {
+  await refreshTasks().catch(()=>{});
+  if (currentTask) await loadLog(currentTask).catch(()=>{});
+}, 3000);
+refreshTasks();
+</script>
+</body>
+</html>
