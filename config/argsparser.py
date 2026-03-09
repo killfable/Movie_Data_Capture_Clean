@@ -14,6 +14,7 @@ def parse():
     parser.add_argument("--over-config", dest='over_config', default=[], nargs='+', help="over write params to config.ini usage: --over-config commom.enable_debug=0")
     parser.add_argument("--test", dest='test_mode', action='store_true', help="run test mode")
     parser.add_argument("--rate", dest='rate_mode', action='store_true', help="run rate mode")
+    parser.add_argument("--normal", dest='normal_mode', action='store_true', help="run normal batch organize mode")
     variables.args = vars(parser.parse_args())
     for diyconf in variables.args.get("over_config", []):
         try:

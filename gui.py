@@ -67,6 +67,12 @@ class App:
         self.proxy_enabled_var = tk.BooleanVar(value=False)
         self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
 
+        self.scrape_path_var = tk.StringVar()
+        self.output_path_var = tk.StringVar()
+
+        self.proxy_enabled_var = tk.BooleanVar(value=False)
+        self.network_test_url_var = tk.StringVar(value=DEFAULT_TEST_URL)
+
         self._build_ui()
         self._load_conf_values_into_ui()
 
@@ -320,7 +326,8 @@ class App:
         self._start(["--rate"])
 
     def run_batch_organize(self) -> None:
-        self._start([])
+        # 通过 main.py + --normal 显式进入 mode_normal，避免依赖“无参数即默认模式”的隐式行为。
+        self._start(["--normal"])
 
     def run_specify(self) -> None:
         path = self.specify_var.get().strip()
