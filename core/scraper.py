@@ -1,5 +1,6 @@
 import os
 import re
+from urllib.parse import urlparse
 from .scrapinglib.base import Scraper
 import logger
 import config
@@ -110,7 +111,16 @@ def cover_json_data(movie_info):
     # movie_info['extrafanart'] = special_characters_replacement(movie_info["extrafanart"]) if 'extrafanart' in movie_info else ''
 
     if 'website' in movie_info:
-        movie_info["website_id"] = movie_info["website"].split("/")[-1]
+        website = str(movie_info["website"])
+        website_id = website.split("/")[-1]
+        try:
+            parsed = urlparse(website)
+            parts = [p for p in parsed.path.split('/') if p]
+            if len(parts) >= 2 and parts[-2] == 'v':
+                website_id = ''
+        except Exception:
+            pass
+        movie_info["website_id"] = website_id
     
 
     return movie_info
